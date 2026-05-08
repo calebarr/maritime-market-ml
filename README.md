@@ -1,11 +1,18 @@
 Python >= 3.9 or newer recommended
 
-# AIS Vessel First Arrivals Pipeline
+# Maritime Market ML
 
-This project builds a small data pipeline that downloads AIS vessel tracking data,
-processes the data to identify the first recorded position for each vessel, and generates an interactive map showing vessel locations by port.
-The pipeline is designed to handle large AIS datasets by processing raw files in chunks and storing smaller processed datasets before
-performing the final analysis.
+Machine Learning analysis of maritime shipping activity and financial market behavior using AIS vessel data and market indicators.
+
+This project combines:
+- NOAA AIS vessel tracking data
+- Financial market data from yfinance
+- Supervised learning models for prediction
+- Unsupervised learning methods for pattern discovery
+
+The system is organized as a modular ML pipeline that process maritime activity, engineers features, 
+merges financial indicators, and explores predictive relationships between shipping behavior and market
+performance.
 
 AIS ZIP
     |
