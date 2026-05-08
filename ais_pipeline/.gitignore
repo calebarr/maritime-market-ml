@@ -1,0 +1,9 @@
+data/raw/
+outputs/
+__pycache__/
+*.pyc
+data/raw
+data/processed/
+outputs/
+*.zip
+*.csv
