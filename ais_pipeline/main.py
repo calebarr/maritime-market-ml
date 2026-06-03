@@ -2,33 +2,49 @@
 Main entry point for this AIS data processing pipeline
 """
 import sys
+from pathlib import Path
 
 from downloader import download_ais_data
 from processor import (
     process_all_zip_files,
     load_processed_csv_files,
     extract_first_arrivals_anywhere,
+    create_port_activity_features,
 )
 from plotting import create_first_arrivals_map
+
 
 
 def main() -> None:
     """Run the AIS pipeline"""
 
     # Expect arguments from terminal
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 3:
         print(
-            "Usage: python main.py <start_date> <end_date> <raw_data_dir> <output_html>"
+            "Usage: python main.py <start_date> <end_date>"
         )
         sys.exit(1)
 
     start_date = sys.argv[1]
     end_date = sys.argv[2]
-    raw_data_dir = sys.argv[3]
-    processed_data_dir = sys.argv[4]
-    output_html = sys.argv[5]
 
-    print("Starting AIS pipeline...")
+    # Google Cloud Storage bucket paths for raw and processed data
+    raw_data_dir = "/Users/calebarrivillaga/Library/CloudStorage/GoogleDrive-calebar@umich.edu/My Drive/maritime-market-ml/raw_data/ais"
+    processed_data_dir = (
+        "/Users/calebarrivillaga/Library/CloudStorage/"
+        "GoogleDrive-calebar@umich.edu/My Drive/"
+        "maritime-market-ml/cleaned_data/"
+        "processed_batches/"
+        f"processed_{start_date}_to_{end_date}"
+    )
+    output_html = "/Users/calebarrivillaga/Library/CloudStorage/GoogleDrive-calebar@umich.edu/My Drive/maritime-market-ml/outputs/first_arrivals_map.html"
+
+    batch_output_dir = "/Users/calebarrivillaga/Library/CloudStorage/GoogleDrive-calebar@umich.edu/My Drive/maritime-market-ml/cleaned_data/ais_batches"
+
+    feature_output = (
+        f"{batch_output_dir}/"
+        f"ais_weekly_{start_date}_to_{end_date}.csv"    
+    )
 
     # Step 1 - download AIS data
     download_ais_data(
@@ -45,18 +61,33 @@ def main() -> None:
     print("Loading processed AIS files...")
     processed_df = load_processed_csv_files(processed_data_dir)
 
-    # Step 4 - extract true first arrivals across all processed data
+    # Step 4 - visualization branch
     print("Extracting first arrivals...")
     first_arrivals_df = extract_first_arrivals_anywhere(processed_df)
 
-    # Step 5 - create map
     print("Creating vessel map...")
     create_first_arrivals_map(
         first_arrivals_df,
         output_path=output_html
     )
 
-    print("Pipeline complete.")
+    # Step 5 - create weekly AIS features
+    print("Creating weekly port activity features...")
+    port_features_df = create_port_activity_features(
+        processed_df,
+        freq="W"
+    )
+
+    Path(batch_output_dir).mkdir(parents=True, exist_ok=True)
+
+    port_features_df.to_csv(
+        feature_output, 
+        index=False
+    )
+
+    print(f"Saved AIS weekly port features to {feature_output}")
+    print("AIS pipeline completed successfully!")
+
 
 if __name__ == "__main__":
     main()

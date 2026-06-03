@@ -52,6 +52,11 @@ def process_all_zip_files(raw_dir: str, processed_dir: str) -> None:
         reduced_df.to_csv(output_file, index=False)
         print(f"Saved processed file to {output_file}")
 
+        # Remove the original zip file only after successful processing to save space
+        if output_file.exists():
+            zip_file.unlink()  # Delete the original zip file to save space
+            print(f"Deleted original raw file {zip_file.name} to save space.")
+
 def load_processed_csv_files(processed_dir: str) -> pd.DataFrame:
     """Load all processed CSV files and combine them into one DataFrame."""
 
@@ -163,22 +168,26 @@ def clean_ais_chunk(df: pd.DataFrame) -> pd.DataFrame:
                 .replace({"NAN": np.nan})
             )
 
-    good_types = list(range(70, 90)) + [30, 52]
+    #good_types = list(range(70, 90)) + [30, 52]
+
+    # Cargo classes 70-79
+    # Tanker classes 80-89
+    good_types = list(range(70, 90))  
     if "VesselType" in df.columns:
         df = df[df["VesselType"].isin(good_types)].copy()
 
     cols_to_drop = [
-        "SOG",
+        #"SOG",
         "COG",
         "Heading",
         "IMO",
         "VesselName",
-        "Length",
+        #"Length",
         "Width",
         "TransceiverClass",
-        "Cargo",
+        #"Cargo",
         "CallSign",
-        "Draft",
+        #"Draft",
     ]
     df = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
 
@@ -194,3 +203,57 @@ def extract_first_arrivals_anywhere(df : pd.DataFrame) -> pd.DataFrame:
     )
 
     return assign_port_names(first_arrivals)
+
+
+def create_port_activity_features(df: pd.DataFrame, freq: str = "W") -> pd.DataFrame:
+    """Create weekly port activity features while avoiding repeated AIS pings."""
+
+    df = df.copy()
+    
+    df["BaseDateTime"] = pd.to_datetime(df["BaseDateTime"], errors="coerce")
+    df = df.dropna(subset=["BaseDateTime"])
+
+    # Assign each AIS record to a port
+    df = assign_port_names(df)
+    df = df[df["Port Name"] != "Unknown"].copy()
+
+    #Create weekly time period
+    df["Week"] = (
+        df["BaseDateTime"]
+        .dt.to_period(freq)
+        .dt.end_time
+        .dt.normalize()
+    )
+
+    # One vessel counts once per port per week
+    vessel_visits = (
+        df.sort_values(["MMSI", "Port Name", "Week", "BaseDateTime"])
+        .drop_duplicates(["MMSI", "Port Name", "Week"], keep="first")
+        .copy()
+    )
+
+    # Identify vessel categories
+    vessel_visits["is_cargo"] = vessel_visits["VesselType"].between(70, 79).astype(int)
+    vessel_visits["is_tanker"] = vessel_visits["VesselType"].between(80, 89).astype(int)
+
+    # Aggregate into weekly port activity features
+    features = (
+        vessel_visits.groupby(["Week", "Port Name"])
+        .agg(
+            Tanker_Vessels=("is_tanker", "sum"),
+            Cargo_Vessels=("is_cargo", "sum"),
+            Draft=("Draft", "mean"),
+            Avg_SOG=("SOG", "mean"),
+            Avg_Length=("Length", "mean"),
+            Unique_Vessels=("MMSI", "nunique"),
+        )
+        .reset_index()
+    )
+
+    # Rename Port Name to Port for cleaner final dataset
+    features = features.rename(columns={"Port Name": "Port"})
+    features["Draft"] = features["Draft"].round(2)
+    features["Avg_SOG"] = features["Avg_SOG"].round(2)
+    features["Avg_Length"] = features["Avg_Length"].round(2)
+    
+    return features
