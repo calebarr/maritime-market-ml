@@ -2,55 +2,123 @@ Python >= 3.9 or newer recommended
 
 # Maritime Market ML
 
-Machine Learning analysis of maritime shipping activity and financial market behavior using AIS vessel data and market indicators.
+Maritime Market ML is a machine learning project that investigates whether maritime shipping activity contains predictive signals for future oil market behavior.
+The project combines Automatic Identification System (AIS) vessel tracking data with financial market data to explore the relationship between global shipping 
+activity and future Brent crude oil returns. 
 
-This project combines:
-- NOAA AIS vessel tracking data
-- Financial market data from yfinance
-- Supervised learning models for prediction
-- Unsupervised learning methods for pattern discovery
+The project applies both supervised and unsupervised machine learning techniques to identify patterns in maritime activity and evaluate thier usefulness for 
+understading and forcasting market behavior. 
 
-The system is organized as a modular ML pipeline that process maritime activity, engineers features, 
-merges financial indicators, and explores predictive relationships between shipping behavior and market
-performance.
+# Data Sources
 
-AIS ZIP
-    |
-    V
-Downloader
-(downloader.py)
-    |
-    V
-Processor
-(processor.py)
-    |
-    V
-Cleaned AIS Data
-data/processed/
-    |
-    V
-First Arrival Extraction
-(group of vessels by MMSI)
-    |
-    V
-Interactive Map
-(plotting.py)
-    |
-    V
-outputs/first_arrivals_map.html
+### Maritime Activity Data
 
-## Project Structure
+- NOAA Automatic Identification System (AIS) vessel tracking data
+- Vessel position, draft, speed, vessel type, and vessel dimensions
+- Multiple U.S. ports from 2019 - 2024
 
-ais_pipeline/
-    downloader.py           # Downloads AIS zip files
-    processor.py            # Cleans data and processes AIS files
-    plotting.py             # Generates the interactive map
-    main.py                 # Pipeline entry point
-    data/
-        raw/                # Raw downloaded AIS zip files
-        processed/          # Processed CSV files (cleaned AIS data)
-    outputs/
-        first_arrivals_map.html
+# Financial Market Data
+
+- Brent Crude Oil prices
+- WTI Crude Oil prices
+- Downloaded using yfinance
+
+# Project Objectives
+
+- Build a scalable AIS data processing pipeline
+- Engineering maritime activity features from vessel tracking data
+- Explore seasonal and operational shipping patterns
+- Investigate whether maritime activity provides predictive information about future oil market returns
+- Compare supervised and unsupervised machine learning approaches
+
+# Machine Learning Methods
+
+## Supervised Learning
+
+- Linear Regression
+- Decision Tree Regression
+- Random Forest Regression
+- Gradient Bossting Regression
+
+Target Variable:
+- Future 3-week Brent crude oil returns
+
+## Unsupervised Learning
+- K-Means Clustering
+- Principal Component Analysis (PCA)
+
+Objectives:
+- Identify recuring maritime activity regimes
+- Detect seasonal patterns in vessel traffic
+- Explore latent structure within AIS derived features
+
+# Feature Engineering
+
+Weekly maritime activity features include:
+
+- Tanker Vessel Count
+- Cargo Vessel Count
+- Unique Vessel Count
+- Average Draft
+- Average Speed Over Ground (SOG)
+- Average Vessel Length
+
+Financial features include:
+
+- Brent Crude Oil Returns
+- WTI Crude Oil Returns
+- Future 3-Week Return targets
+
+# Project Structure
+
+```text
+NOAA AIS Data
+    |
+    V
+downloader.py
+    |
+    V
+processor.py
+    |
+    V
+combine_ais_batches.py
+    |
+    V
+Weekly Maritime Feature Engineering
+    |
+Financial Market Data (yfinance)
+    |
+    V
+Merged Maritime + Financial Dataset
+    |
+    V
+Machine Learning Analysis
+    |-- Supervised Learning
+    |        |-- Linear Regression
+    |        |-- Decision Tree
+    |        |-- Random Forest
+    |        |-- Gradient Boosting
+    |
+    |-- Unsupervised Learning
+            |-- K-Mean Clustering
+            |-- PCA
+    |
+    V
+Results and Visualizations
+```
+
+
+# AIS Processing Pipeline 
+
+1. Downlaod AIS vessel tracking data from NOAA
+2. Filter and clean raw AIS vessel records
+3. Process AIS files in batches to manage large datasets
+4. Combine processed AIS batches into a unfied dataset
+5. Aggregate vessel activity at the weekly level
+6. Engineer maritime activity features
+7. Merge maritime and financial datasets
+8. Train and evaluate machine learning models
+9. Analyze seasonal patterns and market relationships
 
 ## Requirements
 
@@ -62,11 +130,14 @@ Required packages:
 
 - pandas 
 - numpy
+- scikit-learn
+- matplotlib
+- seaborn
 - plotly
-- requests
+- yfinance
 
 
-## How to Run
+# How to Run
 
 Run the pipeline from the terminal:
 
@@ -85,28 +156,7 @@ The pipeline performs the following steps:
 3. Extracts the first recorded arrival for each vessel
 4. Generate an interactive map showing vessel positions
 
-## Output
 
-The generated map will be saved as:
- 
- outputs/first_arrivals_map.html
-
- Open this file in a web browser to view the interactive map. 
-
- ## Example Ouput
- Below is an example of the interactive vessel arrival map generated by the pipeline.
- ![AIS Vessel Map](images/vessel_map_example.png)
-
- ## Notes on Data Size
- AIS datasets are large (hundreds of MB per day when compressed). 
-
- To avoid memory issues, the pipeline:
- - Processes AIS files in chunks
- - Saves smaller processed datasets
- - Combines cleaned data only after reduction
-
- This approach allows the pipeline to scale to larger date ranges while remaining efficient on typical laptop hardware. 
- 
 
 ## Author 
 Caleb Arrivillaga
